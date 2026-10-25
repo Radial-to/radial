@@ -1,0 +1,13 @@
+{
+  // The site preview's preload: a classic script that runs inside the page the
+  // user is editing (the <webview>), not in Radial's window, so it gets its own
+  // global scope. It reaches Electron through require.
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "lib": ["es2022", "dom", "dom.iterable"],
+    "types": ["node"]
+  },
+  "include": ["./**/*.ts"]
+}

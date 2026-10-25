@@ -1,0 +1,12 @@
+node_modules
+dist/
+dist-rehearsal/
+out/
+.DS_Store
+*.log
+.env
+.env.local
+icon-preview.html
+.gstack/
+# Written by scripts/official-build.mjs during an official build, never committed.
+src/main/official-build.json

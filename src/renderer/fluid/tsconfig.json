@@ -1,0 +1,16 @@
+{
+  // The React chat interface, bundled by scripts/build-fluid.mts into vendor/fluid.
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    // strict type checking, but no "use strict" in the bundle esbuild builds
+    // from these files (esbuild follows alwaysStrict): the shipped bundle never had it.
+    "alwaysStrict": false,
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "lib": ["es2022", "dom", "dom.iterable"],
+    "types": [],
+    "paths": { "@/*": ["./*"] }
+  },
+  "include": ["./**/*"]
+}

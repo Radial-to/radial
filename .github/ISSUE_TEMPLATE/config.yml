@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security problem
+    url: https://github.com/Radial-to/radial/security/advisories/new
+    about: Please report security problems privately, not in a public issue.
+  - name: Radial Cloud
+    url: https://radial.to/cloud
+    about: Radial Cloud is a separate, hosted product and isn't part of this repository. For help with it, email support@radial.to.

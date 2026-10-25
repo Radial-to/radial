@@ -1,0 +1,21 @@
+{
+  // The Electron-free core that both hosts run (plans/headless-core.md): the
+  // Mac app's main process and `radial serve` under plain Node. Node's types
+  // only: no DOM, and no Electron. electron and electron-updater resolve to
+  // no-electron.d.ts, which declares nothing, so even a type from them fails
+  // here; test/coreBoundary.test.ts fails the unit tests if anything the core
+  // imports loads them at runtime.
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "lib": ["es2022"],
+    "types": ["node"],
+    "paths": {
+      "electron": ["./no-electron.d.ts"],
+      "electron/*": ["./no-electron.d.ts"],
+      "electron-updater": ["./no-electron.d.ts"]
+    }
+  },
+  "include": ["./**/*.ts"]
+}

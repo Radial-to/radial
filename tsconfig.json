@@ -1,0 +1,7 @@
+{
+  // Editors and `npm run typecheck` use the project nearest each file:
+  // src/main, src/core, src/headless, src/preload, src/renderer,
+  // src/renderer/fluid, src/overlay, test and scripts.
+  "extends": "./tsconfig.base.json",
+  "files": []
+}

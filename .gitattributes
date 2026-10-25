@@ -1,0 +1,4 @@
+# Generated or vendored: kept out of GitHub's language stats and diffs.
+src/renderer/icons.gen.js linguist-generated=true
+src/renderer/icons.open.gen.js linguist-generated=true
+src/renderer/vendor/** linguist-vendored=true

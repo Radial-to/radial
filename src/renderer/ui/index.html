@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Radial UI · Overview</title>
+  <link rel="stylesheet" href="/src/renderer/styles.css">
+  <link rel="stylesheet" href="/src/renderer/workspace.css">
+  <link rel="stylesheet" href="/src/renderer/ui/library.css">
+</head>
+<body class="ui-library">
+  <a class="ui-skip" href="#uiMain">Skip to content</a>
+  <aside class="ui-sidebar">
+    <a class="ui-brand" href="#overview"><img src="/src/renderer/logo.svg" alt="" width="24" height="24">Radial <span>UI</span></a>
+    <label class="ui-search-label" for="uiSearch">Find a component</label>
+    <input id="uiSearch" class="field" type="search" placeholder="Search the library…">
+    <nav id="uiNav" aria-label="UI library"></nav>
+    <div class="ui-sidebar-foot"><span>Appearance</span><div class="theme-seg" role="group" aria-label="Library appearance"><button data-ui-theme="dark" aria-pressed="true">Dark</button><button data-ui-theme="light" aria-pressed="false">Light</button></div></div>
+    <a class="ui-reference" href="/docs/design/README.md">Agent reference ↗</a>
+  </aside>
+  <main id="uiMain" tabindex="-1"></main>
+  <p id="uiAnnouncement" class="ui-sr" role="status"></p>
+  <script type="module" src="/src/renderer/ui/library.js"></script>
+</body>
+</html>

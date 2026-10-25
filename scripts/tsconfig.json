@@ -1,0 +1,19 @@
+{
+  // The build, release and tooling scripts. Node runs them directly (22.18+
+  // strips the types), so imports carry their real extension (.mts) and types
+  // are imported with `import type`.
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "lib": ["es2022"],
+    "types": ["node"],
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    // esbuild bundles chat-entry.mts and diffs-entry.mts and follows alwaysStrict;
+    // the shipped bundles never had "use strict". (Node runs the .mts scripts as
+    // ES modules, which are strict regardless.)
+    "alwaysStrict": false
+  },
+  "include": ["./**/*.mts", "./**/*.cts"]
+}

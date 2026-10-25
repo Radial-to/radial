@@ -1,0 +1,170 @@
+/* Experimental interface patterns using Radial's shared warm color tokens.
+   Surfaces, text, borders and light mode inherit the palette in styles.css. */
+:root, .theme-preview[data-preview-theme="dark"] {
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-strong: 550;
+  --fw-semibold: 600;
+  --r-lg: 10px;
+  --r-xl: 14px;
+  --r-2xl: 18px;
+}
+body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; }
+#app { background: var(--bg); }
+#projectsRail { border-right-color: var(--border); }
+/* Room past the last row: a full list still scrolls a little further. */
+#railProjects { padding: 6px 8px 48px; overflow-x: hidden; }
+.rail-proj, .rail-thread, .rail-term-add { min-height: 36px; border-radius: 10px; }
+/* Chats sit tighter than projects; Home's row and the section headings close up to match. */
+.rail-thread, .rail-term-add { min-height: 30px; padding-top: 3px; padding-bottom: 3px; }
+.rail-proj[data-home] { min-height: 32px; padding-top: 2px; padding-bottom: 2px; }
+.rail-section-heading { margin-top: 8px; }
+.rail-proj.active, .rail-thread.active { background: var(--btn); }
+.rail-proj:hover, .rail-thread:hover { background: var(--bg-hover); }
+.rail-thread.active:hover { background: var(--btn); }
+.rail-proj[data-home] { background: transparent; color: var(--muted); }
+.rail-proj[data-home]:is(:hover, :focus-visible, .active) { background: transparent; color: var(--text); }
+.rail-proj[data-home] > .rail-name { font-size: var(--fs-lg); font-weight: var(--fw-medium); }
+.rail-foot { border-top: 0; padding: 8px; }
+.rail-foot-btn { min-height: 36px; border-radius: 10px; }
+.pd-fixed.left { background: var(--bg-2); }
+.right-dock, html.light .right-dock { background: var(--bg-2); }
+#previews.constrained, html.light #previews.constrained { background: var(--bg-2); }
+#preview { background: var(--bg-2); box-shadow: none; }
+#canvasHeader, #browserNav, #topbar { background: var(--bg); }
+.tool-panel, .panel-dock { background: var(--canvas-surface); }
+.btn { box-shadow: none; }
+.term-new-menu, .branch-menu, .rail-action-menu, .recent-hover-card {
+  background: var(--bg-3); border-color: var(--border-strong); border-radius: 12px; box-shadow: var(--shadow-panel);
+}
+.term-new-menu button, .rail-action-menu button { border-radius: 7px; }
+/* Home is one inset page, with flatter chrome and distinct template surfaces. */
+#homeGrid { inset: 44px 8px 8px; background: var(--bg-2); border-color: var(--border); border-radius: 18px; }
+#homeGrid h1 { font-size: 25px; letter-spacing: -.5px; }
+.hg-search-wrap { border-color: var(--border-strong); background: transparent; }
+.hg-filters button { font-weight: var(--fw-medium); }
+.hg-starter { background: var(--bg-3); border-color: transparent; border-radius: 16px; padding: 20px; }
+.hg-starter:hover { background: var(--btn); border-color: var(--border-strong); }
+.hg-workspace-chat .hg-chat-form { border-radius: 16px; background: var(--bg-3); border-color: var(--border-strong); }
+#homeGrid .hg-card { border-color: var(--border); }
+/* Keep the existing chat controls and state model; make their visual hierarchy
+   quieter and give the conversation and composer room to breathe. */
+.native-chat-head { padding: 10px 16px; }
+.native-chat-messages { padding: 28px 20px 12px; }
+.native-chat-empty { padding: 0 4px 48px; }
+.native-chat-empty h2 { font-size: 20px; letter-spacing: -.35px; font-weight: 500; }
+.native-chat-empty p { max-width: 32ch; font-size: var(--fs-md); color: var(--muted); }
+.native-chat-message { margin-bottom: 28px; }
+.native-chat-message.user { margin-left: 20px; padding: 12px 16px; border-radius: 16px; background: var(--bg-3); }
+.native-chat-role { font-size: var(--fs-xs); color: var(--faint); }
+.native-chat-body { font-size: var(--fs-md); line-height: 1.7; }
+.native-chat-body pre { border-radius: 10px; }
+.native-chat-tool { border-radius: 10px; border-color: var(--border); }
+.native-chat-tool summary { padding: 10px 12px; }
+.native-chat-tool[open] { background: var(--bg-3); }
+.native-chat-form { margin: 8px 12px 12px; padding: 12px; border-radius: 18px; background: var(--bg-3); border-color: var(--border-strong); box-shadow: 0 2px 8px rgb(0 0 0 / 8%); }
+#nativeChatInput { min-height: 64px; padding: 4px 2px 12px; font-size: var(--fs-md); resize: none; }
+#nativeChatInput::placeholder { color: var(--muted); }
+.native-chat-composer-foot { min-height: 30px; padding-left: 2px; }
+#nativeChatSend { width: 30px; height: 30px; border-radius: 50%; }
+#nativeChatStop { display: inline-flex; align-items: center; justify-content: center; height: 30px; flex: none; padding: 0 10px; line-height: 1; border-radius: 8px; background: var(--btn); }
+#nativeChatStop[hidden] { display: none; }
+.native-chat-approval { margin: 0 12px 8px; padding: 14px; border-radius: 14px; background: var(--bg-3); }
+.native-chat-approval .btn { border-radius: 8px; }
+.native-chat-approval [data-decision="accept"] { color: var(--on-btn-primary); background: var(--btn-primary); border-color: transparent; }
+.native-chat-status { padding-inline: 20px; }
+@media (prefers-contrast: more) {
+  :root { --border: rgb(255 255 255 / 24%); --border-strong: rgb(255 255 255 / 40%); }
+  html.light { --border: rgb(0 0 0 / 24%); --border-strong: rgb(0 0 0 / 40%); }
+}
+
+/* One conversation header; panel labels stay visible in the sidebar. */
+.native-chat-composer-foot { justify-content: flex-end; }
+/* Editable copy is the primary content. Labels remain accessible on the inputs. */
+.ct-field:not(.ct-img):not(.ct-anim) > .tp-label { display: none; }
+.ct-field { margin-bottom: 10px; }
+.ct-group { padding-top: 16px; padding-bottom: 8px; margin-top: 8px; font-weight: var(--fw-medium); color: var(--muted); border-color: var(--border); }
+.ct-group:first-of-type { padding-top: 10px; }
+.ct-tag { opacity: 0; }
+.ct-field:is(:hover, :focus-within) .ct-tag { opacity: 1; }
+@media (hover: none) {
+  .ct-tag { opacity: 1; }
+}
+
+/* Transcript: readable messages, compact activity, one place for progress. */
+.native-chat-message.user { margin-left: 28px; margin-bottom: 24px; padding: 12px 14px; border-radius: 14px; }
+.native-chat-message.assistant { margin-bottom: 20px; }
+.native-chat-activity { margin: 0 0 20px; color: var(--muted); }
+.native-chat-activity > summary, .native-chat-tool > summary { list-style: none; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.native-chat-activity > summary { min-height: 28px; width: fit-content; max-width: 100%; padding: 4px 0; font-size: var(--fs-xs); }
+.native-chat-activity summary::-webkit-details-marker { display: none; }
+.native-chat-activity summary > .ic { flex: none; }
+.native-chat-activity[open] > summary > .ic, .native-chat-tool[open] > summary > .ic { transform: rotate(90deg); }
+.native-chat-activity > summary:hover { color: var(--text); }
+.native-chat-activity summary small { font-size: var(--fs-2xs); white-space: nowrap; }
+.native-chat-activity.has-failure > summary > small, .native-chat-tool.has-failure > summary > small { color: var(--danger); }
+.native-chat-steps { margin: 6px 0 0 5px; padding-left: 12px; border-left: 1px solid var(--border-strong); }
+.native-chat-steps .native-chat-tool { margin: 0 0 4px; border: 0; border-radius: 0; background: transparent; }
+.native-chat-steps .native-chat-tool summary { padding: 7px 0; }
+.native-chat-tool summary > span { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.native-chat-tool pre { border-radius: 8px; font-size: var(--fs-xs); }
+.native-chat-composer-foot .native-chat-status { flex: 1; min-width: 0; padding: 0; font-size: var(--fs-xs); overflow-wrap: anywhere; }
+.native-chat-status[data-state="error"] { color: var(--danger); }
+#nativeChatSend[hidden], #nativeChatStop[hidden] { display: none; }
+
+/* Composer controls share the sidebar's menu surface and keyboard behavior. */
+.native-chat-composer-foot { flex-wrap: wrap; gap: 6px; }
+.native-chat-settings { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; flex: 1; min-width: 0; }
+.native-chat-settings button { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 0; height: 30px; padding: 0 6px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font: inherit; font-size: var(--fs-xs); line-height: 1; cursor: pointer; }
+.native-chat-settings button > span { overflow: hidden; white-space: nowrap; padding-right: 8px; margin-right: -8px; mask-image: linear-gradient(to right, #000 calc(100% - 10px), transparent); }
+.native-chat-settings button > .ic { flex: none; }
+#nativeChatModel { max-width: 70%; }
+#nativeChatEffort, #nativeChatPermissions { flex: none; }
+.native-chat-settings button:hover, .native-chat-settings button[aria-expanded="true"] { background: var(--btn); color: var(--text); }
+.native-chat-settings button:disabled, .native-chat-settings button[aria-disabled="true"] { opacity: .55; cursor: default; }
+.native-chat-settings button:focus-visible, .native-chat-activity summary:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+#nativeChatEffort[hidden] { display: none; }
+.native-chat-composer-foot .native-chat-status { flex-basis: 100%; order: -1; padding: 0 6px 4px; }
+.native-chat-composer-foot .native-chat-status:empty { display: none; }
+
+/* The prompt's optical center sits slightly above the line box's center. */
+.native-chat-message.user { padding-block: 11px 13px; }
+.native-chat-message.user .native-chat-body { line-height: 1.5; }
+/* Give clipped tabs a complete fade and reserve a stable trailing add action. */
+#panelDock .tpg-tabs { flex: 1; }
+#panelDock .tpg-tabs.fade-r { mask-image: linear-gradient(to right, #000 calc(100% - 20px), transparent); }
+#panelDock .tpg-tabs.fade-l { mask-image: linear-gradient(to right, transparent, #000 20px); }
+#panelDock .tpg-tabs.fade-l.fade-r { mask-image: linear-gradient(to right, transparent, #000 20px, #000 calc(100% - 20px), transparent); }
+#panelDock :is(.pd-head, .tp-head) { gap: 8px; padding-inline: 12px; min-height: 36px; }
+#panelDock :is(.pd-head, .tp-head) > :is(.pd-plus, .tp-plus) { margin-left: auto; flex: none; width: 24px; height: 24px; }
+#panelDock :is(.pd-head, .tp-head) > .pd-sp { flex: 0; }
+/* Hidden options give their space back to the tabs; + stays at the same edge. */
+#panelDock .pd-head:has(.tpg-tabs) > .pd-sp { display: none; }
+#panelDock .pd-head:has(.tpg-tabs) > .pd-more { width: 0; min-width: 0; height: 24px; padding: 0; margin-left: -8px; overflow: hidden; opacity: 0; pointer-events: none; }
+#panelDock .pd-head:has(.tpg-tabs):is(:hover, :has(.pd-more[aria-expanded="true"])) > .pd-more,
+html:not([data-focus-input="pointer"]) #panelDock .pd-head:has(.tpg-tabs):focus-within > .pd-more { width: 24px; margin-left: 0; opacity: 1; pointer-events: auto; }
+@media (hover: none) {
+  #panelDock .pd-head:has(.tpg-tabs) > .pd-more { width: 24px; margin-left: 0; opacity: 1; pointer-events: auto; }
+}
+#panelDock .comments-foot { padding: 14px; gap: 12px; }
+#panelDock .cm-hint { line-height: 1.6; }
+#panelDock .comments-foot .tp-cta { min-height: 32px; border-radius: 6px; }
+#panelDock .tp-kv { padding-inline: 14px; margin-bottom: 8px; line-height: 1.5; gap: 12px; }
+#panelDock .tp-kv .k { width: 64px; }
+
+#panelDock .tp-sec { padding: 14px 14px 10px; }
+#panelDock .tp-hr { margin-block: 8px 0; }
+#panelDock :is(.pd-head, .tp-head) > :is(.pd-plus, .tp-plus) { order: 2; }
+
+/* Docked tools follow the app theme; canvas overlays retain their own palette. */
+html.light :is(#panelDock, .tool-panel.homed) {
+  --canvas-surface: var(--bg-2);
+  --canvas-text: var(--text);
+  --canvas-muted: var(--muted);
+  --canvas-border: var(--border);
+}
+
+/* Composer focus stays quiet; keyboard focus remains on individual controls. */
+.native-chat-form:focus-within { border-color: var(--border-strong); }
+#nativeChatAttach { width: 24px; min-width: 24px; justify-content: center; padding: 0; font-size: 18px; line-height: 1; }
+#nativeChatModel { padding-inline: 5px; }

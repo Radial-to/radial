@@ -1,0 +1,14 @@
+{
+  // The window. Most files are classic scripts that share one global scope, in
+  // the order index.html loads them; the few that are also Node modules are
+  // listed in DUAL in scripts/build.mts and reached here through globals.d.ts.
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "lib": ["es2022", "dom", "dom.iterable"],
+    "types": []
+  },
+  "include": ["./**/*.ts", "../shared/**/*.ts"],
+  "exclude": ["./fluid/**", "./vendor/**"]
+}

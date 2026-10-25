@@ -1,0 +1,69 @@
+# Radial's headless core on Linux: `radial serve`, the same core the Mac app
+# runs, under plain Node with no window. Both jobs build from source and run
+# the unit tests and the headless end-to-end test (test/headless.e2e.mts,
+# through the real `radial` CLI and `radial mcp`, with no browser); then they
+# add the browser serve's page work uses (`radial browser install`, Playwright's
+# Chrome Headless Shell) and run its end-to-end test
+# (test/headlessBrowser.e2e.mts: fields, shots, migration compares), and the
+# remote surface's (test/headlessRemote.e2e.mts: serve --listen over HTTP with
+# tokens, the preview proxies and share links).
+# The Mac app's own end-to-end tests and its packaged smoke test need macOS
+# and a display, and run where it's built.
+name: Linux
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ubuntu:
+    name: Ubuntu 24.04, Node 24
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      # node-pty has no Linux prebuilds: npm ci compiles it with the runner's python3, make and g++.
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run test:headless
+      # The browser as an agent without root gets it: radial browser install downloads it
+      # and prints the apt line for the libraries it lacks; Playwright's own installer adds them.
+      - run: bin/radial browser install || sudo "$(command -v node)" node_modules/playwright-core/cli.js install-deps chromium-headless-shell
+      - run: bin/radial doctor
+      - run: npm run test:headless:browser
+      - run: npm run test:headless:remote
+
+  slim:
+    # The packages the headless core documents, and nothing else: git, ps
+    # (procps), lsof and ca-certificates to run, python3, make and g++ to
+    # compile node-pty. Runs as root, as container jobs do.
+    name: node:24-bookworm-slim, documented packages only
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    container: node:24-bookworm-slim
+    steps:
+      - run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends git procps lsof ca-certificates python3 make g++
+      - uses: actions/checkout@v4
+      - run: npm ci
+      - run: npm test
+      - run: npm run test:headless
+      # As root, radial browser install also installs the browser's system libraries (Playwright's install-deps).
+      - run: bin/radial browser install
+      - run: npm run test:headless:browser
+      # As root, Chrome refuses its sandbox: serve runs the browser without it, and says so.
+      - run: npm run test:headless:remote

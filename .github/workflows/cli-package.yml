@@ -1,0 +1,143 @@
+# The radial-cli npm package and the Docker images: Radial without a window,
+# installed the way people install it.
+# - pty-prebuilds: node-pty's Linux binaries (x64 and arm64), built on
+#   AlmaLinux 8, whose glibc 2.28 is the oldest Node's own Linux builds run on,
+#   so the binaries load wherever Node does (scripts/pty-prebuild.mts).
+# - package: npm run pack:cli with them. It fails unless the tarball passes its
+#   size test: under budget, the page overlay in it, no Electron, renderer
+#   bundles or source maps.
+# - install: the tarball on node:24-bookworm-slim with no compiler, as root and
+#   as the node user, with the image's npm and with npm 12 (which runs no
+#   install scripts unless allowed), then the package's smoke
+#   (scripts/cli-package-smoke.mts: setup, open, edit text, an agent session
+#   with a stand-in for Claude Code).
+# - docker: both images built from the tarball, each run as docker/Dockerfile
+#   says and driven from the runner over RADIAL_URL and RADIAL_TOKEN
+#   (scripts/docker-smoke.mts; the browser image also takes a screenshot).
+# Nothing here publishes the package or pushes an image.
+name: CLI package
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pty-prebuilds:
+    name: node-pty for linux-${{ matrix.arch }}
+    strategy:
+      matrix:
+        include:
+          - arch: x64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    container: almalinux:8
+    timeout-minutes: 20
+    steps:
+      # node-gyp needs Python 3.8 or newer; AlmaLinux 8's python3 is 3.6.
+      - run: |
+          dnf -y module enable nodejs:22
+          dnf -y install nodejs npm gcc-c++ make python3.11 binutils
+      - uses: actions/checkout@v4
+      - run: node scripts/pty-prebuild.mts --out pty-prebuilds
+        env:
+          npm_config_python: /usr/bin/python3.11
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pty-linux-${{ matrix.arch }}
+          path: pty-prebuilds/
+
+  package:
+    name: npm package
+    needs: pty-prebuilds
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: pty-linux-*
+          path: pty-prebuilds
+          merge-multiple: true
+      - run: npm run pack:cli -- --prebuilds pty-prebuilds
+      - uses: actions/upload-artifact@v4
+        with:
+          name: radial-cli
+          path: dist/cli/*.tgz
+
+  install:
+    name: install on linux-${{ matrix.arch }}, npm ${{ matrix.npm }}
+    needs: package
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: ubuntu-24.04
+            npm: the image's
+          - arch: x64
+            runner: ubuntu-24.04
+            npm: '12'
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+            npm: the image's
+    runs-on: ${{ matrix.runner }}
+    # No python3, make or g++: node-pty has to come prebuilt.
+    container: node:24-bookworm-slim
+    timeout-minutes: 20
+    steps:
+      - run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends git procps lsof ca-certificates
+      - if: matrix.npm == '12'
+        run: npm install -g npm@12
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: radial-cli
+          path: pkg
+      - name: As root
+        run: |
+          npm install -g --foreground-scripts pkg/radial-cli-*.tgz
+          node scripts/cli-package-smoke.mts --radial radial --fake-claude test/fixtures/fake-claude.cjs
+      - name: As the node user, into a prefix of its own
+        run: |
+          chmod -R a+rX .
+          su node -s /bin/sh -c "npm install -g --prefix \$HOME/.npm-global --foreground-scripts $PWD/pkg/radial-cli-*.tgz && node scripts/cli-package-smoke.mts --radial \$HOME/.npm-global/bin/radial --fake-claude test/fixtures/fake-claude.cjs"
+
+  docker:
+    name: Docker images
+    needs: package
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      # The runner's own radial (out/main/cli.js) is the client, reaching the container over RADIAL_URL and RADIAL_TOKEN.
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/download-artifact@v4
+        with:
+          name: radial-cli
+          path: dist/cli
+      - run: docker build -f docker/Dockerfile -t radial dist/cli
+      - run: docker build -f docker/Dockerfile --target browser -t radial-browser dist/cli
+      - run: node scripts/docker-smoke.mts --image radial
+      - run: node scripts/docker-smoke.mts --image radial-browser --shot

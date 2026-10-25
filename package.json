@@ -1,0 +1,158 @@
+{
+  "name": "radial-platform",
+  "productName": "Radial Dev",
+  "version": "1.0.0",
+  "description": "Radial for Mac, the open-source editor for marketing sites.",
+  "main": "out/main/main.js",
+  "scripts": {
+    "postinstall": "node scripts/fix-node-pty.mts && node node_modules/electron/install.js",
+    "build": "node scripts/build.mts",
+    "watch": "node scripts/build.mts --watch",
+    "typecheck": "node scripts/typecheck.mts",
+    "check": "npm run typecheck && npm test",
+    "start": "node scripts/build.mts && electron .",
+    "start:chat-experiment": "node scripts/build.mts && RADIAL_CHAT_EXPERIMENT=1 electron .",
+    "ui": "node scripts/ui-library.mts",
+    "ui:audit": "node scripts/ui-audit.mts",
+    "test": "node scripts/build.mts && node --import tsx --test test/*.test.*",
+    "test:e2e": "node scripts/build.mts && node --test test/*.e2e.mts",
+    "test:headless": "node scripts/build.mts && node --test test/headless.e2e.mts",
+    "test:headless:browser": "node scripts/build.mts && RADIAL_BROWSER_REQUIRED=1 node --test test/headlessBrowser.e2e.mts",
+    "test:headless:remote": "node scripts/build.mts && RADIAL_BROWSER_REQUIRED=1 node --test test/headlessRemote.e2e.mts",
+    "test:cloud": "node --test cloud/test/*.test.js",
+    "test:smoke": "node scripts/build.mts && node scripts/smoke.mts",
+    "find-icon": "node scripts/find-icon.mts",
+    "icons": "node --env-file-if-exists=.env scripts/build-icons.mts",
+    "icons:open": "node scripts/build-icons.mts --set open --out src/renderer/icons.open.gen.js",
+    "pack": "CSC_IDENTITY_AUTO_DISCOVERY=false node scripts/build.mts && electron-builder --dir",
+    "dist": "node scripts/build.mts && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac dmg zip",
+    "test:corpus": "tsx scripts/corpus-check.mts",
+    "build:diffs": "node scripts/build-diffs.mts",
+    "build:chat": "node scripts/build-chat.mts",
+    "build:fluid": "node scripts/build-fluid.mts",
+    "pack:cli": "node scripts/pack-cli.mts"
+  },
+  "author": "Radial LLC",
+  "license": "Apache-2.0",
+  "private": true,
+  "homepage": "https://radial.to",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Radial-to/radial.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Radial-to/radial/issues"
+  },
+  "engines": {
+    "node": ">=22.18"
+  },
+  "devDependencies": {
+    "@base-ui/react": "1.8.0",
+    "@pierre/diffs": "1.4.1",
+    "@tailwindcss/cli": "4.3.3",
+    "@types/node": "24.19.2",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@types/ws": "8.18.2",
+    "class-variance-authority": "0.7.1",
+    "cn": "0.4.0",
+    "dompurify": "3.4.17",
+    "electron": "44.9.3",
+    "electron-builder": "26.17.0",
+    "esbuild": "0.28.2",
+    "framer-motion": "14.0.0",
+    "highlight.js": "11.12.0",
+    "lucide-react": "1.52.0",
+    "lucide-static": "1.52.0",
+    "marked": "18.0.14",
+    "minimatch": "10.2.5",
+    "pdfjs-dist": "6.4.299",
+    "playwright-core": "1.62.1",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "tailwindcss": "4.3.3",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3"
+  },
+  "dependencies": {
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/headless": "^6.0.0",
+    "@xterm/xterm": "^6.0.0",
+    "cuelume": "^0.1.2",
+    "electron-updater": "6.8.10",
+    "node-pty": "^1.1.0",
+    "posthog-node": "^5.46.0",
+    "ws": "^8.22.0",
+    "yauzl": "^2.10.0"
+  },
+  "build": {
+    "appId": "to.radial.mac.dev",
+    "productName": "Radial Dev",
+    "copyright": "Copyright © 2026 Radial LLC",
+    "directories": {
+      "buildResources": "build",
+      "output": "dist"
+    },
+    "files": [
+      "out/**/*",
+      "package.json",
+      "!out/renderer/radial-logo-flame-*.png",
+      "!**/*.map",
+      "out/**/*.js.map",
+      "!out/renderer/ui/**/*",
+      "!**/node_modules/@xterm/headless/{src,typings}/**/*",
+      "!**/*.{md,markdown}",
+      "!**/{test,tests,__tests__,example,examples,docs,doc}/**/*",
+      "out/main/migrate/playbook/**/*",
+      "out/main/templates/**/*"
+    ],
+    "asarUnpack": [
+      "**/node_modules/node-pty/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "bin",
+        "to": "bin"
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "icon": "build/icon.icns",
+      "minimumSystemVersion": "13.0",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "arm64"
+          ]
+        }
+      ],
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "extendInfo": {
+        "NSAppleEventsUsageDescription": "Radial uses developer tools (Node, git) to run and publish your site.",
+        "CFBundleDocumentTypes": [
+          {
+            "CFBundleTypeName": "Folder",
+            "CFBundleTypeRole": "Viewer",
+            "LSHandlerRank": "Alternate",
+            "LSItemContentTypes": [
+              "public.folder"
+            ]
+          }
+        ]
+      }
+    },
+    "dmg": {
+      "title": "Radial Dev ${version}"
+    }
+  }
+}

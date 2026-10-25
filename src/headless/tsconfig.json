@@ -1,0 +1,18 @@
+{
+  // `radial serve`, the headless host that runs the core under plain Node
+  // (plans/headless-core.md). Like src/core: Node's types only, no DOM, and
+  // electron and electron-updater resolve to a module with nothing in it.
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "lib": ["es2022"],
+    "types": ["node"],
+    "paths": {
+      "electron": ["../core/no-electron.d.ts"],
+      "electron/*": ["../core/no-electron.d.ts"],
+      "electron-updater": ["../core/no-electron.d.ts"]
+    }
+  },
+  "include": ["./**/*.ts"]
+}

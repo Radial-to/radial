@@ -1,0 +1,21 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; color: #1a1a2e; line-height: 1.6; }
+.site-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 48px; border-bottom: 1px solid #eee; }
+.brand { font-weight: 700; font-size: 18px; text-decoration: none; color: #1a1a2e; }
+nav { display: flex; gap: 22px; }
+.nav-link { text-decoration: none; color: #555; }
+.nav-link:hover { color: #4f46e5; }
+.hero { max-width: 760px; margin: 0 auto; padding: 96px 24px 64px; text-align: center; }
+.hero-title { font-size: 46px; line-height: 1.1; margin-bottom: 20px; letter-spacing: -0.02em; }
+.hero-sub { font-size: 19px; color: #555; margin-bottom: 28px; }
+.hero-image { display: block; width: 100%; max-width: 760px; margin: 8px auto 0; border-radius: 12px; }
+.cta { display: inline-block; background: #4f46e5; color: #fff; padding: 13px 26px; border-radius: 8px; text-decoration: none; font-weight: 600; }
+.features { display: flex; gap: 24px; max-width: 1000px; margin: 0 auto; padding: 24px 24px 96px; }
+.feature { flex: 1; padding: 28px; border: 1px solid #eee; border-radius: 12px; }
+.feature--blue { background: #eef2ff; border-color: #c7d2fe; }
+.feature--red { background: #fef2f2; border-color: #fecaca; }
+.feature--pink { background: #fdf2f8; border-color: #fbcfe8; }
+.feature h3 { font-size: 20px; margin-bottom: 10px; }
+.feature p { color: #555; margin-bottom: 14px; }
+.card-link { color: #4f46e5; text-decoration: none; font-weight: 600; }
+.site-footer { text-align: center; padding: 32px; color: #999; border-top: 1px solid #eee; }

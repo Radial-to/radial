@@ -1,0 +1,17 @@
+{
+  // The tests: unit tests (*.test.ts) run through tsx by npm test; end-to-end
+  // tests (*.e2e.mts) run under Node's own type stripping (npm run test:e2e),
+  // so they import types with `import type` only. The DOM library types the
+  // code they run inside pages.
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "lib": ["es2022", "dom", "dom.iterable"],
+    "types": ["node"],
+    // The tests import some scripts (*.mts), whose own imports carry the .mts extension.
+    "allowImportingTsExtensions": true
+  },
+  "include": ["./**/*.ts", "./**/*.mts"],
+  "exclude": ["./fixtures/**"]
+}

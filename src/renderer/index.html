@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; worker-src 'self' blob:; img-src 'self' data: blob: http: https:;" />
+  <title>Radial</title>
+  <link rel="stylesheet" href="vendor/xterm.css" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="collaboration.css" />
+  <link rel="stylesheet" href="nativeChat.css" />
+  <link rel="stylesheet" href="workspace.css" />
+  <link rel="stylesheet" href="codex-ui.css" />
+  <link rel="stylesheet" href="vendor/fluid/chat.css" />
+</head>
+<body>
+  <!-- Launch splash: the brand mark with a sweeping shimmer; fades out once the app is ready. -->
+  <div id="appSplash" class="app-splash"><div class="splash-logo"></div></div>
+  <div id="app">
+    <!-- Projects rail — open projects as a persistent vertical list. -->
+    <aside id="projectsRail">
+      <div class="rail-chrome"><button id="railCollapse" class="rail-collapse" aria-controls="projectsRail" aria-expanded="true" aria-label="Hide projects sidebar" data-tip="Hide sidebar (⌘⇧A)" data-tip-below></button></div>
+      <div id="railProjects" class="rail-projects"></div>
+      <div class="rail-foot">
+        <button id="settingsBtn" class="rail-foot-btn" title="Setup &amp; status"><span class="sf-ic"></span><span class="sf-label">Settings</span><span id="settingsDot" class="sf-dot" style="display:none"></span></button>
+        <button id="feedbackBtn" class="rail-foot-btn" title="Report a bug or share an idea on GitHub"><span class="sf-ic"></span><span class="sf-label">Feedback</span></button>
+      </div>
+    </aside>
+    <button id="railReopen" aria-controls="projectsRail" aria-expanded="false" aria-label="Show projects sidebar" data-tip="Show sidebar (⌘⇧A)" data-tip-below></button>
+    <!-- Top bar: tabs on the left, actions on the right -->
+    <header id="topbar">
+      <!-- Context sits at the end of the tab strip, just right of the active project tab. -->
+      <div id="tabBar"><button id="contextToggle" class="ctx-toggle disabled" data-tip="Context: notes &amp; docs the agent reads" data-tip-below>Context</button></div>
+      <!-- Branch selector, centered (breakpoints moved down to the nav row). -->
+      <div class="topbar-center">
+        <button id="branchSwitch" class="branch-switch disabled" title="Switch branch / project settings" aria-haspopup="true" aria-expanded="false"></button>
+      </div>
+      <div class="topbar-actions">
+        <button id="openExtBtn" class="btn icon-btn" disabled data-tip="Open in your browser" data-tip-below></button>
+        <button id="focusBtn" class="btn" disabled data-tip="Preview: hide the chrome (⌘\, Esc)" data-tip-below></button>
+        <button id="publishBtn" class="btn btn-primary" disabled aria-haspopup="true" aria-expanded="false">Publish</button>
+      </div>
+    </header>
+    <!-- Browser-nav row (vNext): back/fwd/reload · full-width route bar (the
+         page switcher — click lists pages, typing filters) · open-in-browser ·
+         focus. Canvas tools live in the tool strip on the canvas's left edge. -->
+    <div id="browserNav">
+      <span class="bn-left">
+        <!-- Pages toggle hidden while the breakpoint switcher trials this spot
+             (pages stay reachable via the route bar's list button). -->
+        <button id="pagesBtn" data-tip="Pages panel" data-tip-below style="display:none"></button>
+        <div id="deviceSwitch" class="device-switch disabled">
+          <button id="lockBtn" class="dev-btn lock-btn" data-tip="Lock aspect ratio (freeze breakpoints · height fills)" data-tip-below></button>
+          <input id="widthInput" class="width-input" type="text" inputmode="numeric" maxlength="5" spellcheck="false" data-tip="Locked width in px" data-tip-below />
+          <span class="device-sep"></span>
+          <button class="dev-btn" data-device="desktop" data-tip="Desktop · 1440px" data-tip-below></button>
+          <button class="dev-btn" data-device="tablet" data-tip="Tablet · 768px" data-tip-below></button>
+          <button class="dev-btn" data-device="mobile" data-tip="Mobile · 390px" data-tip-below></button>
+          <!-- Narrow-bar stand-in: one button cycling desktop → tablet → mobile.
+               Container query swaps it in when the trio can't fit; lock stays. -->
+          <button id="deviceCycle" class="dev-btn" data-tip="Viewport" data-tip-below style="display:none"></button>
+        </div>
+      </span>
+      <div class="bn-center">
+        <span class="bn-arrows">
+          <button id="navBack" class="bn-btn" data-tip="Back" data-tip-below></button>
+          <button id="navFwd" class="bn-btn" data-tip="Forward" data-tip-below></button>
+          <button id="navReload" class="bn-btn" data-tip="Reload preview" data-tip-below></button>
+        </span>
+        <div class="bn-url"><img id="navFavicon" class="nav-favicon" alt="" style="display:none" /><span id="navUrlPrefix" class="bn-url-prefix"></span><input id="navUrl" type="text" spellcheck="false" placeholder="/" /><button id="navPageSettings" class="bn-btn" data-tip="Pages: click to list, type to search" data-tip-below></button></div>
+      </div>
+      <span class="bn-right">
+        <span class="bn-tools" id="bnToolsDock"></span>
+        <button id="navOpenExt" class="bn-btn" data-tip="Open in your browser" data-tip-below></button>
+        <button id="navFocus" class="bn-btn" data-tip="Preview: hide the chrome (⌘\, Esc)" data-tip-below></button>
+      </span>
+    </div>
+    <!-- Focus-mode publish: preview is deliberately chromeless (topbar, docks
+         and browser bar all hide), so this floating pill keeps the publish
+         surface one click away; the popover anchors beneath it. -->
+    <button id="navPublish" class="btn btn-primary" data-tip="Publish (⌘⇧↩)" data-tip-below>Publish</button>
+    <!-- Tool strip (vNext): the canvas modes + screenshot/pause, docked on the
+         canvas's left edge between the agent dock and the preview. -->
+    <!-- Regional layout: the canvas's own header (viewport + nav + url). -->
+    <div id="canvasHeader" style="display:none"></div>
+    <div id="toolStrip">
+      <span class="ts-group">
+        <button class="bn-tool" data-mode="none" data-tip="Browse (V)"></button>
+        <button class="bn-tool" data-mode="select" data-tip="Select (S)"></button>
+        <button class="bn-tool" data-mode="text" data-tip="Edit text (T)"></button>
+        <button class="bn-tool" data-mode="comment" data-tip="Comment (C)"></button>
+        <button class="bn-tool" data-mode="inspect" data-tip="Inspect (I · hold ⌥ in Select)"></button>
+        <button class="bn-tool" data-mode="draw" data-tip="Draw (D)"></button>
+      </span>
+      <span class="ts-sep"></span>
+      <button id="tsShot" class="bn-btn" data-tip="Full-page screenshot"></button>
+      <button id="navPause" class="bn-btn" data-tip="Pause animations"></button>
+    </div>
+    <div id="branchMenu" class="branch-menu" style="display:none"></div>
+    <div id="publishMenu" class="branch-menu publish-menu" style="display:none"></div>
+
+    <div id="body">
+      <!-- Pages / Context / History panel, opened from the browser-nav control. -->
+      <aside id="sidebar">
+        <div class="side-tabs">
+          <button class="side-tab active" data-pane="pages">Pages</button>
+          <button class="side-tab" data-pane="launch">Launch</button>
+          <button id="sidebarClose" class="panel-x side-close" data-tip="Close (Esc)" data-tip-below aria-label="Close panel"></button>
+        </div>
+        <div class="side-search" id="sideSearch">
+          <span class="search-ic"></span>
+          <input id="pageSearch" type="text" placeholder="Search…" spellcheck="false" />
+        </div>
+        <div class="side-pane" id="pane-pages">
+          <div class="pane-head"><span>Pages</span><span class="pane-head-actions"><button id="pagesRefresh" class="caret-btn" title="Refresh the page list"></button><button id="sitemapBtn" class="caret-btn" title="Visual sitemap (shortcut M)"></button><button id="groupAdd" class="caret-btn" title="New group"></button><button id="pageAdd" class="caret-btn" title="New page"></button></span></div>
+          <ul id="pageList"></ul>
+        </div>
+        <!-- Pre-launch checklist: deterministic readiness checks, rendered by renderLaunch(). -->
+        <div class="side-pane" id="pane-launch" hidden>
+          <div class="pane-head"><span>Pre-launch check</span></div>
+          <div id="launchBody" class="launch-body"></div>
+        </div>
+        <!-- Home screen: a projects list in the sidebar (Figma-style), shown only when no project is open. -->
+        <div class="side-pane" id="pane-home" hidden>
+          <div class="pane-head" id="homeOpenHead"><span>Open now</span></div>
+          <ul id="homeOpenList"></ul>
+          <div class="pane-head"><span>Recent</span></div>
+          <ul id="homeRecentList"></ul>
+        </div>
+      </aside>
+      <!-- Preview area -->
+      <main id="preview">
+        <!-- Home / first-run: Laravel-Cloud-style layout — a title band with
+             source tabs, then one centered column on a dotted grid. The
+             new-project form lives INLINE in the template pane (no modal). -->
+        <div id="emptyState" class="empty-state">
+          <!-- Workspace grid home (Paper 15.2): your sites as cards, create first.
+               The classic "Connect a site" page below is the New-site flow. -->
+          <div id="homeGrid" class="home-grid" hidden>
+            <div class="hg-head">
+              <div><h1>Home</h1></div>
+              <div class="hg-head-actions">
+                <label class="hg-search-wrap"><span id="hgSearchIcon" aria-hidden="true"></span><input id="hgSearch" class="text-input hg-search" type="search" aria-label="Search projects or paste a GitHub link" placeholder="Search projects…" spellcheck="false" /></label>
+                <button id="hgNew" class="btn">Open project <span id="hgNewIcon" aria-hidden="true"></span></button>
+              </div>
+            </div>
+            <div id="hgToolbar" class="hg-toolbar">
+              <div class="hg-filters" aria-label="Filter projects">
+                <button data-hg-filter="all" aria-pressed="true">All projects <span id="hgCount"></span></button>
+                <button data-hg-filter="activity" aria-pressed="false">Activity</button>
+                <button data-hg-filter="pinned" aria-pressed="false">Pinned</button>
+                <button data-hg-filter="open" aria-pressed="false">Open now</button>
+                <button data-hg-filter="github" aria-pressed="false">GitHub</button>
+              </div>
+              <div class="hg-tools">
+                <button id="hgSort" class="btn" aria-label="Sort projects: Last opened" aria-haspopup="menu" aria-expanded="false"><span>Last opened</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg></button>
+                <div class="hg-view" aria-label="Project view">
+                  <button data-hg-view="list" aria-label="List view" aria-pressed="true"></button>
+                  <button data-hg-view="grid" aria-label="Grid view" aria-pressed="false"></button>
+                </div>
+              </div>
+            </div>
+            <button id="hgActivitySummary" class="hg-activity-summary" aria-label="View workspace activity">Checking workspace activity…</button>
+            <section id="hgWorkspaceChat" class="hg-workspace-chat" aria-labelledby="hgChatTitle">
+              <div class="hg-chat-heading"><h2 id="hgChatTitle">Ask your workspace</h2><p>Find a project, check what’s running, or pick up where you left off.</p></div>
+              <form id="hgChatForm" class="hg-chat-form">
+                <textarea id="hgChatInput" aria-label="Ask about your websites or workspace" rows="1" placeholder="Ask about your websites or workspace…"></textarea>
+                <button id="hgChatSend" type="submit" aria-label="Send to workspace agent" disabled></button>
+              </form>
+              <div class="hg-chat-suggestions"><button type="button">What’s running right now?</button><button type="button">Which projects need attention?</button><button type="button">Help me start a new website</button><button type="button">Bring in my existing website</button></div>
+              <p id="hgChatStatus" class="hg-chat-status" role="status"></p>
+              <button id="hgChatCancel" class="hg-chat-cancel" type="button" hidden>Don’t send</button>
+            </section>
+            <section id="hgActivity" class="hg-activity" aria-label="Workspace activity" hidden></section>
+            <section id="hgStarters" class="hg-starters" aria-labelledby="hgStartersTitle" hidden>
+              <h2 id="hgStartersTitle">Start with a template</h2>
+              <div id="hgStarterCards" class="hg-starter-cards"></div>
+            </section>
+            <div id="hgListHead" class="hg-list-head" aria-hidden="true"><span>Project</span><span>Last opened</span><span></span></div>
+            <div id="hgCards" class="hg-cards" role="list" aria-label="Projects"></div>
+            <div id="hgGithub" hidden></div>
+            <section id="hgCheckout" aria-label="Open repository" hidden></section>
+            <p id="hgSummary" class="hg-summary" role="status"></p>
+          </div>
+          <div class="fr-page">
+            <div class="fr-head">
+              <button id="frBack" class="btn-mini fr-back" hidden>← Your sites</button>
+              <img class="brand-logo" src="logo-color.png" alt="Radial" />
+              <h1 id="frTitle">Connect a site</h1>
+              <p class="fr-sub">Point Radial at a marketing-site repo (Next.js, Astro, or plain HTML). Radial runs it, shows it live, and writes your edits back to the code.</p>
+              <div class="fr-tabs" role="tablist">
+                <button class="fr-tab active" data-fr="template">Start a new site</button>
+                <button class="fr-tab" data-fr="github">Import from GitHub</button>
+                <button class="fr-tab" data-fr="folder">Open a folder</button>
+                <button class="fr-tab" data-fr="migrate">Bring in a live site</button>
+              </div>
+            </div>
+            <div class="fr-body">
+              <div class="fr-col">
+                <div class="dash-section" id="openSection" style="display:none">
+                  <div class="dash-head"><span>Open now</span></div>
+                  <ul id="openList" class="proj-list"></ul>
+                </div>
+                <div class="dash-section" id="recentSection" style="display:none">
+                  <div class="dash-head"><span>Recent</span></div>
+                  <ul id="recentList" class="proj-list"></ul>
+                </div>
+
+                <div class="fr-pane" id="fr-template">
+                  <div class="np-templates" id="npTemplates"></div>
+                  <label class="cg-field">
+                    <span>Site name</span>
+                    <input id="npName" class="text-input" type="text" placeholder="My Site" spellcheck="false" />
+                  </label>
+                  <div class="np-location">
+                    <span id="npPathPreview" class="np-path"></span>
+                    <button id="npChangeDir" class="btn-mini">Change…</button>
+                  </div>
+                  <label class="cg-check np-gh-row" id="npGhRow" style="display:none">
+                    <input type="checkbox" id="npGh" />
+                    <span>Also create a private GitHub repo</span>
+                    <select id="npGhOwner" class="text-input np-gh-owner" style="display:none" aria-label="GitHub owner"></select>
+                  </label>
+                  <div id="npStatus" class="np-status" style="display:none"></div>
+                  <button id="npCreate" class="btn btn-primary fr-cta">Create site</button>
+                  <button id="npCancel" class="btn fr-stop" style="display:none">Stop</button>
+                </div>
+
+                <div class="fr-pane" id="fr-github" hidden>
+                  <div class="github-row">
+                    <input id="githubUrl" class="text-input" type="text" placeholder="https://github.com/owner/repo" />
+                    <button id="openGithubBtn" class="btn">Open</button>
+                  </div>
+                  <div class="dash-section" id="ghSection">
+                    <div class="dash-head">
+                      <span class="dash-head-label" id="ghHeadLabel">Your GitHub</span>
+                      <span class="dash-head-actions">
+                        <select id="ghOwner" class="gh-owner" title="Workspace" style="display:none"></select>
+                        <input id="ghSearch" class="gh-search" type="text" placeholder="Search…" spellcheck="false" style="display:none" />
+                        <button id="ghRefresh" class="btn-mini" style="display:none">Refresh</button>
+                      </span>
+                    </div>
+                    <ul id="ghRepoList" class="proj-list"><li class="muted">Checking GitHub…</li></ul>
+                  </div>
+                </div>
+
+                <!-- Bring in a live site (plans/site-migration.md): the same
+                     migration the workspace chat and `radial migrate start` run. -->
+                <div class="fr-pane" id="fr-migrate" hidden>
+                  <p class="mg-intro">Moving off Webflow, Framer, Squarespace or another builder? Radial copies the live site into code you own, then an agent rebuilds it page by page and checks it against the original.</p>
+                  <label class="cg-field">
+                    <span>Your current site</span>
+                    <span class="github-row">
+                      <input id="mgUrl" class="text-input" type="text" placeholder="www.example.com" spellcheck="false" />
+                      <button id="mgCheck" class="btn" type="button">Check</button>
+                    </span>
+                  </label>
+                  <p id="mgFound" class="mg-note mg-found" role="status"></p>
+                  <div class="cg-field">
+                    <span>Build it in</span>
+                    <div class="np-templates mg-frameworks" role="radiogroup" aria-label="Framework">
+                      <button class="np-tpl" type="button" role="radio" aria-checked="false" data-mg-fw="astro"><b>Astro</b><span>Static pages, closest to the original markup</span></button>
+                      <button class="np-tpl" type="button" role="radio" aria-checked="false" data-mg-fw="next"><b>Next.js</b><span>React, for app-like features later</span></button>
+                    </div>
+                  </div>
+                  <div class="cg-field">
+                    <span>Anything else from your site <em class="mg-optional">optional</em></span>
+                    <div id="mgDrop" class="mg-drop">
+                      <p class="mg-drop-hint">Drop in files you already have: CMS exports, logos, fonts, brand guidelines, copy docs. The agent uses them alongside the live site.</p>
+                      <div id="mgFiles" class="mg-files"></div>
+                      <button id="mgAddFiles" class="btn-mini" type="button">Add files…</button>
+                    </div>
+                    <p id="mgCmsHelp" class="mg-note" hidden></p>
+                  </div>
+                  <label class="cg-field">
+                    <span>Site name</span>
+                    <input id="mgName" class="text-input" type="text" placeholder="my-site" spellcheck="false" />
+                  </label>
+                  <div class="np-location"><span id="mgPath" class="np-path"></span></div>
+                  <p class="mg-note mg-model-tip">For best results, use one of the latest frontier models at high to max effort.</p>
+                  <div id="mgStatus" class="np-status" style="display:none"></div>
+                  <button id="mgStart" class="btn btn-primary fr-cta" type="button" disabled>Bring it in</button>
+                </div>
+
+                <div class="fr-pane" id="fr-folder" hidden>
+                  <button id="openBtn2" class="fr-folder-card">
+                    <b>Open a local folder…</b>
+                    <span>Any marketing-site repo on this Mac. Radial detects the framework and runs it.</span>
+                  </button>
+                  <div class="dash-section" id="availableSection">
+                    <div class="dash-head">
+                      <span id="folderHead">Projects folder</span>
+                      <button id="setFolderBtn" class="btn-mini">Choose folder…</button>
+                    </div>
+                    <ul id="availableList" class="proj-list"><li class="muted">Point Radial at a folder to list projects in it.</li></ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="previewProgress" class="preview-progress"></div>
+        <div id="previews"></div>
+
+        <!-- Rulers + guides: temporary screen-fixed overlay chrome over the preview
+             view. Hidden unless rulers are toggled on AND a project is open. -->
+        <div id="rulerLayer" class="ruler-layer" style="display:none">
+          <div id="rulerCorner" class="ruler-corner"></div>
+          <div id="rulerTop" class="ruler-strip ruler-top" data-axis="h"></div>
+          <div id="rulerLeft" class="ruler-strip ruler-left" data-axis="v"></div>
+          <div id="guideLayer" class="guide-layer"></div>
+        </div>
+
+        <!-- Visual sitemap — full-canvas column map of the site's pages -->
+        <div id="sitemapView" class="sitemap-view" style="display:none">
+          <div class="sm-head"><span id="smTitle"></span><span class="sm-hint">click a page to open it</span></div>
+          <div id="smScroll" class="sm-scroll">
+            <div id="smSize" class="sm-size"><div id="smCanvas" class="sm-canvas"></div></div>
+          </div>
+          <div class="sm-zoom">
+            <button id="smZoomOut" title="Zoom out">−</button>
+            <button id="smZoomLabel" title="Reset zoom">100%</button>
+            <button id="smZoomIn" title="Zoom in">+</button>
+            <button id="smZoomFit" title="Fit the whole map">Fit</button>
+          </div>
+        </div>
+
+        <!-- Settings & status — full-canvas page (like Home), not a modal -->
+        <div id="settingsView" class="settings-view" style="display:none">
+          <aside class="settings-sidebar">
+            <div class="settings-label">Settings</div>
+            <nav id="settingsNav" aria-label="Settings sections"></nav>
+            <button id="settingsBack" class="settings-back">← Back to workspace</button>
+          </aside>
+          <div class="settings-content">
+          <div class="settings-head">
+            <div><h1 id="settingsTitle">Settings</h1><p id="settingsDescription"></p></div>
+            <span class="settings-actions">
+              <button id="settingsRecheck" class="btn icon-btn" data-tip="Re-check tools" data-tip-below aria-label="Re-check tools"></button>
+              <button id="settingsClose" class="btn icon-btn" data-tip="Close" data-tip-below aria-label="Close settings"></button>
+            </span>
+          </div>
+          <div id="settingsBody" class="settings-body"></div>
+          </div>
+        </div>
+
+
+        <!-- Onboarding — an auto-detected setup checklist; hands over the exact
+             commands to run in the terminal on the right. -->
+        <div id="onboardView" class="settings-view" style="display:none">
+          <div class="settings-head">
+            <h1>Set up Radial</h1>
+            <span id="onboardProgress" class="ob-progress"></span>
+            <span class="settings-actions">
+              <button id="onboardRecheck" class="btn-mini">Re-check</button>
+              <button id="onboardClose" class="btn-mini">Done</button>
+            </span>
+          </div>
+          <div id="onboardBody" class="settings-body onboard-body"></div>
+        </div>
+
+        <!-- Add-a-reference picker — choose a GitHub repo, or paste any URL. -->
+        <div id="linkPickerView" class="settings-view" style="display:none">
+          <div class="settings-head">
+            <h1>Add a reference</h1>
+            <span class="settings-actions"><button id="lpClose" class="btn-mini">Done</button></span>
+          </div>
+          <div class="settings-body lp-body">
+            <p class="lp-intro">Attach a link the agent should know about: the product’s repo, docs, a competitor page. The agent reads it itself when it’s relevant.</p>
+            <div class="lp-pick-row">
+              <select id="lpOwner" class="lp-owner" title="GitHub workspace"></select>
+              <input id="lpSearch" class="lp-search" type="text" placeholder="Search repos…" spellcheck="false" />
+            </div>
+            <ul id="lpRepoList" class="proj-list lp-repo-list"><li class="muted">Loading…</li></ul>
+            <div class="or-divider">or paste any URL</div>
+            <div class="lp-url-row">
+              <input id="lpUrl" class="text-input" type="text" placeholder="https://github.com/owner/repo, docs, any page" spellcheck="false" />
+              <button id="lpUrlBtn" class="btn btn-primary">Add</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Context mode — full surface over the canvas: file-list rail + the open .md.
+             Entered from the top-bar Context toggle; the agent dock stays visible alongside. -->
+        <div id="contextView" class="context-view" style="display:none">
+          <div id="ctxRail" class="ctx-rail">
+            <div class="pane-head"><span>Context</span><button id="contextAdd" class="caret-btn" title="New context file">+</button></div>
+            <ul id="contextList"></ul>
+            <div class="pane-head ctx-linked-head"><span>References</span><button id="linkAdd" class="caret-btn" title="Add a link (GitHub repo, docs, any page)">+</button></div>
+            <ul id="linkedList"></ul>
+          </div>
+          <div class="ctx-main">
+            <div class="ctx-head">
+              <input id="ctxTitle" class="ctx-title" spellcheck="false" title="Rename" />
+              <span class="ctx-actions">
+                <span id="ctxSaved" class="ctx-saved"></span>
+                <button id="ctxAudit" class="ctx-act" title="Suggest improvements without changing intent">Audit</button>
+                <button id="ctxEnhance" class="ctx-act" title="Rewrite into a clear, agent-friendly rule">Enhance</button>
+                <button id="ctxDelete" class="ctx-iconbtn ctx-iconbtn-danger" title="Delete"></button>
+                <button id="ctxClose" class="ctx-iconbtn" title="Close"></button>
+              </span>
+            </div>
+            <div id="ctxAuditBox" class="ctx-audit" style="display:none"></div>
+            <textarea id="ctxEditor" class="ctx-editor" spellcheck="false" style="display:none"></textarea>
+            <div id="ctxImageWrap" class="ctx-image-wrap" style="display:none"><img id="ctxImage" class="ctx-image" alt="" /></div>
+            <div id="ctxEmpty" class="ctx-empty-main">
+              <div class="ctx-dz-wrap">
+                <button id="ctxDropzone" type="button" class="ctx-dropzone">
+                  <span class="ctx-dz-icon"></span>
+                  <span class="ctx-empty-title">Drag and drop or click to upload</span>
+                </button>
+                <p class="ctx-dz-note">Anything the agent should know: notes, docs, PDFs, screenshots, palettes. Drag files in or paste an image right here. Stored with the project so they travel with the site, never published. Or create a blank note with <strong>+</strong>, or ask the agent to draft one.</p>
+              </div>
+              <input id="ctxFile" type="file" multiple hidden />
+            </div>
+          </div>
+        </div>
+
+        <div id="resizeHandle" style="display:none"><div class="grip"></div></div>
+        <div id="widthLabel" style="display:none">1280px</div>
+        <div id="dragMask" style="display:none"></div>
+
+        <div id="previewLoading" class="preview-loading" style="display:none">
+          <div class="spinner"></div>
+          <div id="loadingText">Starting dev server…</div>
+        </div>
+
+        <!-- Comment composer floats over the canvas, so leaving a comment never
+             takes over the work dock (you can keep browsing / working). -->
+        <div id="commentComposer" class="comment-composer floating" style="display:none"></div>
+
+        <!-- Quick edit pill: click an element in Select mode → describe the
+             change right there. Runs on the Task-models pick (Settings). -->
+        <div id="quickEdit" class="quick-edit" style="display:none"></div>
+
+
+        <!-- Adjust-undo chip: after the pill's steppers hand a tweak to the
+             agent, one click here restores the pre-adjust checkpoint (also
+             kept in History, so undo outlives the chip). -->
+        <div id="adjustUndo" class="adjust-undo" style="display:none"></div>
+
+        <!-- Comment card: clicking a pin shows the comment's content + context
+             and a reply-to-agent box right next to it on the canvas. -->
+        <div id="commentPopover" class="comment-popover" style="display:none"></div>
+
+        <!-- Build-error banner: shown when the dev server can't compile (the
+             preview would otherwise just show a framework error overlay). -->
+        <div id="buildErrorBanner" class="build-err-banner" style="display:none"></div>
+      </main>
+    </div>
+
+    <!-- Generic confirm dialog (used for destructive actions) -->
+    <div id="confirmModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmMsg" style="display:none">
+      <div class="modal-card confirm-card">
+        <h2 id="confirmTitle">Are you sure?</h2>
+        <p class="muted" id="confirmMsg"></p>
+        <div class="modal-actions">
+          <button id="confirmCancel" class="btn">Cancel</button>
+          <button id="confirmOk" class="btn btn-danger">Delete</button>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- Publish dialog -->
+    <!-- Work dock — Agent / Terminal / Comments (persistent left column) -->
+    <div id="rightDock" class="right-dock" style="display:none">
+      <div id="rightDockResize" class="right-dock-resize" title="Drag to resize"></div>
+      <div class="side-tabs">
+        <!-- The Agent tab IS the terminal: the real CLI (Claude Code / Codex /
+             Cursor) is Radial's one agent surface (SDK chat removed 2026-07-27). -->
+        <button class="side-tab active" data-rt="terminal" data-tip="Agent (⌘J)" data-tip-below></button>
+        <button class="side-tab" data-rt="comments" data-tip="Comments (⌘⇧C)" data-tip-below><span id="commentsCount" class="rt-count"></span></button>
+        <!-- Terminal is reached via ⌘J / the agent flows now; this slot is
+             version history — a dock pane like Agent and Comments. -->
+        <button class="side-tab tab-history" id="historyBtn" data-rt="history" data-tip="Version history" data-tip-below aria-label="Version history"></button>
+      </div>
+
+      <!-- Pinned to the top of the left sidebar: sections stack here, sticky above the agent window. -->
+      <div id="pdFixedL" class="pd-fixed left" aria-label="Pinned to the top"></div>
+      <!-- Terminal = the agent pane. The composer lives here permanently: its
+           send routes into the live CLI (element chips, images, tools intact). -->
+      <section class="right-pane" id="rp-terminal">
+        <!-- Agents are switched from the left sidebar rail; no in-pane launcher bar. -->
+        <div id="nativeChatToolbar" class="native-chat-toolbar" hidden>
+          <div class="native-chat-head">
+            <span id="nativeChatTitle" class="native-chat-title">Codex</span>
+            <div class="native-chat-modes" role="group" aria-label="Conversation view"><button type="button" data-chat-view="chat" aria-label="Chat" title="Chat" aria-pressed="true"></button><button type="button" data-chat-view="terminal" aria-label="Terminal" title="Terminal" aria-pressed="false"></button></div>
+          </div>
+          <span id="nativeChatViewStatus" role="status"></span>
+        </div>
+        <div id="nativeChatPanel" class="native-chat-panel" hidden>
+          <div id="nativeChatMessages" class="native-chat-messages" role="log" aria-label="Conversation"></div>
+          <div id="nativeChatApproval" class="native-chat-approval" hidden></div>
+          <form id="nativeChatForm" class="native-chat-form"><textarea id="nativeChatInput" rows="2" aria-label="Message" placeholder="Ask about this project…"></textarea><div class="native-chat-composer-foot"><div class="native-chat-settings"><button id="nativeChatModel" type="button" aria-label="Choose model" aria-haspopup="menu" aria-expanded="false">Codex</button><button id="nativeChatEffort" type="button" aria-label="Reasoning effort" aria-haspopup="menu" aria-expanded="false" hidden></button><button id="nativeChatPermissions" type="button" aria-label="Permissions" aria-haspopup="menu" aria-expanded="false">Workspace access</button></div><div id="nativeChatStatus" class="native-chat-status" role="status"></div><button id="nativeChatStop" type="button" hidden>Stop</button><button id="nativeChatSend" type="submit" aria-label="Send message"></button></div></form>
+        </div>
+        <div id="terminals"></div>
+        <div id="termEmpty" class="term-empty" hidden>No chat yet. Use + New chat in the sidebar to start one.</div>
+        <div id="termOpening" class="term-empty" role="status" hidden><span class="shimmer-text"></span></div>
+        <div class="agent-input" id="agentInputBar">
+          <!-- Quick-actions row (above the input box). -->
+          <div id="composerActions" class="composer-actions"></div>
+          <div class="composer">
+            <div id="composerQueued" class="composer-queued" style="display:none"></div>
+            <div class="composer-hint" aria-hidden="true"><span class="composer-hint-key">⌘L</span> to focus</div>
+            <div id="agentInput" contenteditable="true" data-ph="Ask Radial…" spellcheck="true"></div>
+            <div id="composerAttachments" class="composer-attachments"></div>
+            <div class="composer-bar">
+              <span class="composer-tools">
+                <button id="composerAttach" class="composer-tool" data-tip="Attach a file"></button>
+                <span class="bn-tools composer-modes">
+                  <button class="bn-tool" data-mode="none" data-tip="Browse (V)"></button>
+                  <button class="bn-tool" data-mode="select" data-tip="Select (S)"></button>
+                  <button class="bn-tool" data-mode="text" data-tip="Edit text (T)"></button>
+                  <button class="bn-tool" data-mode="comment" data-tip="Comment (C)"></button>
+                  <button class="bn-tool" data-mode="inspect" data-tip="Inspect (I · hold ⌥ in Select)"></button>
+                  <button class="bn-tool" data-mode="draw" data-tip="Draw (D)"></button>
+                  <span class="bn-tdiv" aria-hidden="true"></span>
+                  <button class="bn-tool bn-shot" id="composerShot" data-tip="Screenshot to agent"></button>
+                </span>
+              </span>
+              <button id="agentSend" class="agent-send" data-tip="Send"></button>
+            </div>
+          </div>
+          <input id="composerFile" type="file" multiple style="display:none" />
+        </div>
+      </section>
+
+      <!-- Comments -->
+      <!-- Version history: Figma-style moments, rendered by renderMoments(). -->
+      <section class="right-pane" id="rp-history">
+        <div id="momentBanner" hidden></div>
+        <div id="momentList" class="moment-list"><div class="muted">No versions yet</div></div>
+      </section>
+
+      <section class="right-pane" id="rp-comments">
+        <div class="rp-head">
+          <span class="rp-head-actions">
+            <button id="commentsFilterBtn" class="cm-filter-btn" aria-haspopup="menu" aria-expanded="false" title="Filter comments"></button>
+            <button id="commentsMoreBtn" class="tp-btn cm-more-btn" aria-haspopup="menu" aria-expanded="false" aria-label="Comment actions" title="Actions"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="19" cy="12" r="1.9"/></svg></button>
+          </span>
+        </div>
+        <div id="commentsList" class="comments-list"></div>
+        <div id="commentsFoot" class="comments-foot">
+          <div id="commentsVercel" class="cm-vercel" style="display:none"></div>
+          <span class="cm-hint"><kbd>C</kbd> then click anything to pin a comment</span>
+          <button id="commentsReview" class="tp-ghost-btn" style="display:none">Review fixes</button>
+          <button id="commentsSendAll" class="tp-cta">Send all to agent</button>
+        </div>
+      </section>
+    </div>
+
+    <!-- Page settings drawer -->
+    <div id="pageDrawer" class="drawer" style="display:none">
+      <div class="drawer-head">
+        <span>Page settings: <span id="psRoute" class="muted"></span></span>
+        <span class="drawer-head-actions">
+          <button id="psClose" class="panel-x" title="Close (Esc)" aria-label="Close"></button>
+        </span>
+      </div>
+      <div class="drawer-body" id="psBody"></div>
+    </div>
+
+    <!-- Edit link dialog -->
+    <div id="linkModal" class="modal" style="display:none">
+      <div class="modal-card">
+        <h2>Edit link</h2>
+        <p class="muted" id="linkModalText"></p>
+        <input id="linkUrlInput" class="text-input" type="text" placeholder="/contact or https://…" />
+        <div class="modal-actions">
+          <button id="cancelLink" class="btn">Cancel</button>
+          <button id="confirmLink" class="btn btn-primary">Update link</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add / install a Claude Code skill (drop a folder/.zip/.skill/SKILL.md, or have the agent author one). -->
+    <div id="skillModal" class="modal" style="display:none">
+      <div class="modal-card sk-card">
+        <div class="sk-head"><h2>Add a skill</h2><button id="skillClose" class="ctx-iconbtn" title="Close"></button></div>
+        <div class="sk-scope" id="skillScope">
+          <button type="button" class="sk-scope-btn active" data-scope="global">All projects</button>
+          <button type="button" class="sk-scope-btn" data-scope="project">This repo only</button>
+        </div>
+        <button id="skillDrop" type="button" class="ctx-dropzone sk-drop">
+          <span class="ctx-dz-icon"></span>
+          <span class="ctx-empty-title">Drag and drop or click to upload</span>
+        </button>
+        <input id="skillFile" type="file" accept=".md,.zip,.skill" multiple hidden />
+        <p class="ctx-dz-note">A folder or <strong>.zip</strong>/<strong>.skill</strong> containing a <strong>SKILL.md</strong>, or a single <strong>.md</strong> whose YAML frontmatter has a name &amp; description.</p>
+        <div class="sk-or">or</div>
+        <button id="skillDescribe" type="button" class="btn sk-describe">Describe a skill for the agent to create</button>
+      </div>
+    </div>
+
+    <!-- Connect to GitHub — create a new repo from this folder, or push to an existing one -->
+    <div id="connectModal" class="modal" style="display:none">
+      <div class="modal-card connect-card">
+        <h2>Connect to GitHub</h2>
+        <p class="muted" id="cgSubtitle">Put this project on GitHub so you can publish, sync, and collaborate.</p>
+        <div class="cg-tabs">
+          <button class="cg-tab active" data-cg="create">Create new repo</button>
+          <button class="cg-tab" data-cg="existing">Push to existing</button>
+        </div>
+
+        <!-- Create a new repo -->
+        <div class="cg-pane" id="cg-create">
+          <label class="cg-field">
+            <span>Owner</span>
+            <select id="cgOwner" class="text-input"></select>
+          </label>
+          <label class="cg-field">
+            <span>Repository name</span>
+            <input id="cgName" class="text-input" type="text" spellcheck="false" placeholder="my-site" />
+          </label>
+          <label class="cg-check">
+            <input type="checkbox" id="cgPrivate" checked />
+            <span>Private repository</span>
+          </label>
+        </div>
+
+        <!-- Push to an existing repo -->
+        <div class="cg-pane" id="cg-existing" hidden>
+          <div class="cg-search-row">
+            <select id="cgExOwner" class="text-input"></select>
+            <input id="cgExSearch" class="text-input" type="text" placeholder="Search your repos…" spellcheck="false" />
+          </div>
+          <ul id="cgRepoList" class="proj-list cg-repo-list"><li class="muted">Loading…</li></ul>
+          <div class="or-divider">or paste a URL</div>
+          <input id="cgUrl" class="text-input" type="text" placeholder="https://github.com/owner/repo" spellcheck="false" />
+        </div>
+
+        <!-- Vercel deploys (folded into the same Connect step) -->
+        <div class="cg-vercel" id="cgVercelSection">
+          <label class="cg-check cg-vercel-toggle"><input type="checkbox" id="cgVercel" checked /><span>Set up Vercel deploys</span></label>
+          <label class="cg-field" id="cgVercelScopeRow">
+            <span>Vercel scope / team</span>
+            <select id="cgVercelScope" class="text-input"></select>
+          </label>
+          <div class="cg-vercel-note" id="cgVercelNote"></div>
+        </div>
+
+        <div id="cgStatus" class="cg-status"></div>
+        <div class="modal-actions">
+          <button id="cgCancel" class="btn">Cancel</button>
+          <button id="cgSubmit" class="btn btn-primary">Create &amp; push</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- New Project — scaffold a net-new site from a baseline (official create
+         CLIs for Next/Astro; built-in starter for plain HTML) -->
+    <!-- (The New Project modal moved inline into the home's template pane.) -->
+
+
+    <!-- Node.js provisioning — a project needed Node and the machine has
+         none. Radial installs a private userland copy (no admin, nothing
+         touches the system) and retries whatever was interrupted. -->
+    <div id="nodeModal" class="modal" style="display:none">
+      <div class="modal-card np-card">
+        <h2>This project needs Node.js</h2>
+        <p class="muted">Radial can install a private copy just for its own use. No admin password, no Homebrew, nothing changes about your system setup.</p>
+        <div id="nodeStatus" class="np-status" style="display:none"></div>
+        <button id="nodeCancelX" class="panel-x modal-x" title="Close" aria-label="Close"></button>
+        <div class="modal-actions">
+          <button id="nodeCancel" class="btn">Not now</button>
+          <button id="nodeGo" class="btn btn-primary">Install &amp; continue</button>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- Command palette (⌘K) -->
+    <div id="cmdk" class="cmdk" style="display:none">
+      <div class="cmdk-box">
+        <input id="cmdkInput" class="cmdk-input" type="text" placeholder="Type a command…" />
+        <div id="cmdkList" class="cmdk-list"></div>
+      </div>
+    </div>
+
+    <!-- Pinned panel dock: full-height right column, sibling of the other
+         fixed chrome (rail/topbar) so no transformed ancestor can trap it. -->
+    <!-- Tool panels float at chrome level: they may sit over the rail and the
+         agent dock, not just the canvas. -->
+    <div id="toolPanelLayer"></div>
+    <aside id="panelDock" class="panel-dock" aria-label="Pinned panels">
+      <div id="pdResize" class="pdock-resize" title="Drag to resize"></div>
+      <div id="pdShip"></div>
+      <div id="pdSections" class="pd-sections"></div>
+    </aside>
+    <aside id="panelDockL" class="panel-dock left" aria-label="Pinned panels (left)">
+      <div id="pdSectionsL" class="pd-sections"></div>
+    </aside>
+
+    <!-- Toast / log -->
+    <div id="toast" class="toast" style="display:none"></div>
+    <!-- Update ready: the corner card that replaced the topbar pill (Paper 30.1 A) -->
+    <div id="updateCard" class="corner-card" role="status">
+      <div class="cc-head">
+        <span class="cc-title">Update ready</span>
+        <button id="ucX" class="cc-x" aria-label="Dismiss"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+      </div>
+      <div class="cc-body">
+        <p class="cc-sub" id="ucSub"></p>
+        <div class="cc-actions">
+          <button id="ucRestart" class="cc-primary">Restart now</button>
+          <button id="ucLater" class="cc-ghost">Later</button>
+        </div>
+      </div>
+    </div>
+    <div id="logPane" class="log-pane" style="display:none">
+      <div class="log-header"><span>Log</span><button id="toggleLog" class="btn-mini">hide</button></div>
+      <pre id="logBody"></pre>
+    </div>
+  </div>
+  <script src="windowErrors.js"></script>
+  <script src="vendor/xterm.js"></script>
+  <script src="vendor/addon-fit.js"></script>
+  <script src="colorPicker.js"></script>
+  <script src="icons.gen.js"></script>
+  <script src="navigation.js"></script>
+  <script src="threadPreview.js"></script>
+  <script src="taskTitle.js"></script>
+  <script src="../shared/cliQuestion.js"></script>
+  <script src="../shared/agentPaste.js"></script>
+  <script src="adjustDirect.js"></script>
+  <script src="fuzzy.js"></script>
+  <script src="viewport.js"></script>
+  <script src="guides.js"></script>
+  <script src="osc52.js"></script>
+  <script src="agentUrl.js"></script>
+  <script src="shortcuts.js"></script>
+  <script src="shortcutPromoter.js"></script>
+  <script src="diffView.js"></script>
+  <script src="publishSettings.js"></script>
+  <script src="projectStorageSettings.js"></script>
+  <script src="publishWorkflow.js"></script>
+  <script src="collaboration.js"></script>
+  <script src="projectLibrary.js"></script>
+  <script src="workspaceHome.js"></script>
+  <script src="../shared/chatPermissions.js"></script>
+  <script src="vendor/chat/content.js"></script>
+  <script src="chat/responses.js"></script>
+  <script src="chat/composer.js"></script>
+  <script src="vendor/fluid/chat.js"></script>
+  <script src="nativeChat.js"></script>
+  <script src="renderer.js"></script>
+</body>
+</html>

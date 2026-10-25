@@ -1,0 +1,20 @@
+name: Idea
+description: Suggest something Radial for Mac could do, or do better.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: What are you trying to do?
+      description: The job you're doing or the problem you hit, more than a solution.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help?
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else
+      description: Screenshots, examples from other tools, or how often this comes up.

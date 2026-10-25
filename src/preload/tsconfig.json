@@ -1,0 +1,11 @@
+{
+  // The preload runs in the window's isolated world with Node available.
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "lib": ["es2022", "dom", "dom.iterable"],
+    "types": ["node"]
+  },
+  "include": ["./**/*.ts"]
+}

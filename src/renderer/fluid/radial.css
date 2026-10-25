@@ -1,0 +1,73 @@
+/* Radial's integration tokens; only Fluid islands and their portals use them. */
+.fluid-chat {
+  --foreground: var(--text);
+  --background: var(--bg);
+  --muted-foreground: var(--muted);
+  --shape-input-radius: 8px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--text);
+  font-size: var(--fs-md);
+}
+.fluid-chat :where(button, textarea) { font-family: inherit; }
+.fluid-chat :where(svg) { display: block; }
+.fluid-central-icon { display: inline-flex; flex: none; }
+.fluid-central-icon svg { width: 100%; height: 100%; }
+#nativeChatForm.fluid-chat { padding: 0; background: transparent; border: 0; box-shadow: none; border-radius: 12px; }
+#nativeChatForm.fluid-chat #nativeChatInput { min-height: 72px; padding: 6px; font-size: var(--fs-md); line-height: 1.5; }
+#nativeChatForm.fluid-chat .native-chat-settings { flex-wrap: wrap; gap: 2px; }
+#nativeChatForm.fluid-chat .native-chat-settings button { height: 28px; border-radius: 8px; }
+#nativeChatForm.fluid-chat #nativeChatSend, #nativeChatForm.fluid-chat #nativeChatStop { height: 28px; flex: none; }
+#nativeChatForm.fluid-chat #nativeChatSend { width: 28px; border-radius: 50%; }
+.fluid-settings-slot { min-width: 0; }
+.fluid-send-slot { display: flex; align-items: center; gap: 6px; }
+.fluid-menu-host { position: relative; z-index: 10020; }
+.fluid-menu-host [role=menu] { max-width: min(320px, calc(100vw - 24px)); }
+.fluid-chat .chat-context:empty { display: none; }
+.fluid-chat .chat-context:not(:empty) { padding: 4px 6px; }
+@media (prefers-reduced-motion: reduce) {
+  .fluid-chat *, .fluid-chat *::before, .fluid-chat *::after { animation-duration: 0s !important; transition-duration: 0s !important; }
+}
+
+/* Real tool events remain inspectable inside Fluid's compact activity rows. */
+.native-chat-activity.fluid-chat { min-width: 0; margin-bottom: 20px; }
+.fluid-chat .native-chat-tool { margin: 2px 0 4px; }
+.fluid-chat .native-chat-tool summary { padding: 6px 8px; min-width: 0; }
+.fluid-chat .native-chat-tool summary > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fluid-chat .native-chat-tool summary small { flex-shrink: 0; }
+.fluid-chat .native-chat-tool pre { padding: 8px; }
+.fluid-chat .fluid-activity-failure { color: var(--danger, #d66b65); }
+.fluid-chat .shimmer-text { background-image: linear-gradient(90deg, var(--muted) 0%, var(--muted) 35%, var(--text) 50%, var(--muted) 65%, var(--muted) 100%); }
+@media (prefers-reduced-motion: reduce) {
+  .fluid-chat .shimmer-text { background: none; color: var(--muted); }
+}
+
+.chat-message-actions.fluid-chat { gap: 2px; }
+.chat-message-actions.fluid-chat button { padding: 0; }
+.chat-message-actions.fluid-chat button:hover { background: none; }
+
+.native-chat-approval.fluid-chat { padding: 0; border: 0; background: transparent; max-height: 48vh; overflow-y: auto; }
+.native-chat-approval.fluid-chat > div { display: block; margin: 0; }
+.native-chat-approval.fluid-chat .fluid-question-error { margin: 6px 12px; color: var(--danger); }
+
+/* Attachment surfaces stay compact and keep controls separate from previews. */
+.fluid-chat.chat-context, .fluid-chat.chat-sent-context { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px; max-height: 180px; overflow-y: auto; }
+.fluid-chat .chat-attachment { position: relative; min-width: 0; max-width: 100%; margin: 0; color: var(--muted); font-size: var(--fs-xs); }
+.fluid-chat .chat-attachment-visual { display: grid; width: 80px; gap: 4px; padding: 6px; border: 1px solid var(--border); border-radius: 10px; }
+.fluid-chat .chat-attachment-preview { width: 64px; height: 64px; padding: 0; }
+.fluid-chat .chat-attachment-preview:disabled { opacity: 1; }
+.fluid-chat .chat-attachment-name { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.fluid-chat .chat-attachment-placeholder { display: grid; place-items: center; width: 64px; height: 64px; background: var(--bg-3); border-radius: 8px; }
+.fluid-chat .chat-attachment-file { display: inline-flex; align-items: center; gap: 4px; max-width: 220px; height: 30px; padding: 0 4px 0 8px; border: 1px solid var(--border); border-radius: 8px; }
+.fluid-chat .chat-attachment-file > button:not(.chat-attachment-remove) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 4px; }
+.fluid-chat .chat-attachment-remove { flex: none; width: 20px; height: 20px; padding: 0; }
+.fluid-chat .chat-attachment-visual .chat-attachment-remove { position: absolute; top: 2px; right: 2px; border-radius: 50%; background: var(--bg-3); box-shadow: 0 0 0 1px var(--border); }
+
+.chat-queue.fluid-chat { padding: 8px; }
+.chat-queue.fluid-chat > .fluid-queue { display: block; padding: 0; }
+.fluid-queue-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 2px 6px; font-size: var(--fs-xs); }
+.fluid-queue-heading > span { min-width: 0; }
+.fluid-queue-list { display: flex; flex-direction: column; gap: 4px; list-style: none; margin: 0; padding: 0; }
+.fluid-queue-list > li { min-width: 0; touch-action: pan-x; }
+.chat-queue.fluid-chat .fluid-queue-list button { width: 20px; height: 20px; padding: 0; background: none; }
+.chat-queue.fluid-chat button:hover { background: var(--hover); }
+.chat-queue.fluid-chat .fluid-queue-heading button { flex-shrink: 0; padding: 0 6px; background: none; }

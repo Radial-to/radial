@@ -1,0 +1,85 @@
+#!/bin/sh
+# radial — the Radial desktop app from the command line.
+#
+#   radial open <path|name|owner/repo|github-url>   Open a project (a GitHub link is cloned first); `radial .` = this folder
+#   radial ls [--all]                                 Open projects with their preview URLs; --all adds recent projects
+#   radial status|url|context|pages|comments|shot     Read a project: git + preview, the live URL, rules + .context docs, routes, comments, a screenshot
+#   radial new <name> --template astro|next|html      Scaffold a site from a starter and open it
+#   radial focus · sleep · wake · close               Bring the app forward; sleep, wake, or close a project
+#   radial fields [route]                             The page's editable fields (ids for edit text --field / edit image --field)
+#   radial edit text|image · meta set · comments add  Change a site deterministically (no agent): text, an image, a head tag, a comment
+#   radial context add · refs add · rules add · undo  Give a site context back (a .context doc, a reference, an AGENTS.md rule); undo the last edit
+#   radial sync · publish · share · moments           Pull, commit + push (production needs --yes), live share, version history
+#   radial agent start|send|output|wait|list|kill     Visible agent sessions in a project's terminal (start "<task>" --submit; send a follow-up; wait reads the bell)
+#   radial home                                       Show Home and start its agent: the session a phone drives
+#   radial migrate start|capture|compare              Bring a live site (Webflow, Framer, Squarespace…) into Radial; capture it; compare the rebuild
+#   radial mcp                                        Serve the same verbs as MCP tools (Claude Desktop, Cursor, Codex)
+#   radial serve [status|stop] [--detach] [--listen]  Radial without a window (a VM, a container, a Linux server); --listen adds HTTP (MCP, the CLI, events)
+#   radial setup [--listen <address>]                 Radial without a window in one go: serve in the background, MCP for Claude Code and Codex, then doctor
+#   radial token create|list|revoke                   API tokens for radial serve --listen (RADIAL_URL and RADIAL_TOKEN point the CLI at one)
+#   radial browser [install] · doctor                 The browser radial serve's page work uses; what serve needs on this machine
+#   radial telemetry [status|on|off]                  radial serve's anonymous usage events (off with CI or DO_NOT_TRACK set)
+#   radial --help · --version                         The full list (from src/main/cliSpec.js) · the app version
+#
+# This script ships inside Radial.app (Contents/Resources/bin) and the app
+# symlinks it onto PATH (and shims it into every Radial terminal). It is only a
+# locator: it finds the app next to itself and runs the real client
+# (out/main/cli.js, compiled from src/main) THROUGH THE APP BINARY as Node (ELECTRON_RUN_AS_NODE), so
+# no system Node is needed. The client talks to the running app over its
+# control socket and launches the app when it isn't running.
+#
+# Where there is no app (Linux, a server, a container), or with
+# RADIAL_CLI_FLAVOR=headless, it runs the same client on the system's Node:
+# the headless flavor, which starts `radial serve` in the background when
+# nothing answers (plans/headless-core.md). The radial-cli npm package has a
+# `radial` of its own (src/headless/npmBin.ts), which is always headless.
+set -e
+CDPATH=
+
+# Follow our own symlink chain to the bundle (or the source checkout).
+SELF="$0"
+while [ -L "$SELF" ]; do
+  LINK="$(readlink "$SELF")"
+  case "$LINK" in /*) SELF="$LINK" ;; *) SELF="$(dirname "$SELF")/$LINK" ;; esac
+done
+BIN_DIR="$(cd "$(dirname "$SELF")" && pwd)"
+export RADIAL_CLI_SHIM="$BIN_DIR/$(basename "$SELF")" # where MCP clients should point their config
+NODE_BIN=
+
+if [ "$RADIAL_CLI_FLAVOR" != "headless" ] && [ -x "$BIN_DIR/../../MacOS/Radial" ]; then
+  # Packaged: Contents/Resources/bin/radial → Contents/MacOS/Radial, client inside app.asar.
+  export RADIAL_CLI_APP="$(cd "$BIN_DIR/../../MacOS" && pwd)/Radial"
+  export RADIAL_CLI_FLAVOR="${RADIAL_CLI_FLAVOR:-packaged}"
+  ENTRY="$(cd "$BIN_DIR/.." && pwd)/app.asar/out/main/cli.js"
+elif [ "$RADIAL_CLI_FLAVOR" != "headless" ] && [ -f "$BIN_DIR/../package.json" ] && [ -x "$BIN_DIR/../node_modules/electron/dist/Electron.app/Contents/MacOS/Electron" ]; then
+  # Source checkout (bin/radial in the repo): the dev flavor, run with the checkout's Electron.
+  ROOT="$(cd "$BIN_DIR/.." && pwd)"
+  export RADIAL_CLI_APP="$ROOT/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron"
+  export RADIAL_CLI_APP_ARG="$ROOT"
+  export RADIAL_CLI_FLAVOR="${RADIAL_CLI_FLAVOR:-dev}"
+  ENTRY="$ROOT/out/main/cli.js"  # compiled by `npm run build`
+elif [ -f "$BIN_DIR/../out/main/cli.js" ]; then
+  # No Mac app here, or RADIAL_CLI_FLAVOR=headless: the client on the system's Node.
+  NODE_BIN="$(command -v node || true)"
+  if [ -z "$NODE_BIN" ]; then
+    echo "radial: Node.js isn't on PATH. Radial runs on Node 22.18 or newer: install it, then run radial again." >&2
+    exit 1
+  fi
+  unset RADIAL_CLI_APP RADIAL_CLI_APP_ARG
+  export RADIAL_CLI_FLAVOR=headless
+  ENTRY="$(cd "$BIN_DIR/.." && pwd)/out/main/cli.js"
+else
+  echo "radial: can't find the Radial app next to this script ($BIN_DIR)" >&2
+  exit 1
+fi
+
+if [ -n "$RADIAL_CLI_DRYRUN" ]; then
+  # Test hook: print what would run, one token per line, and exit.
+  echo "${NODE_BIN:-$RADIAL_CLI_APP}"
+  echo "$ENTRY"
+  for A in "$@"; do echo "$A"; done
+  exit 0
+fi
+
+if [ -n "$NODE_BIN" ]; then exec "$NODE_BIN" "$ENTRY" "$@"; fi
+ELECTRON_RUN_AS_NODE=1 exec "$RADIAL_CLI_APP" "$ENTRY" "$@"
