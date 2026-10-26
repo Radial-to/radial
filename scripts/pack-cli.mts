@@ -161,16 +161,23 @@ function secret(name: string): string {
   return '';
 }
 
-/** The "Run Radial without a window" section of the public README (oss/README.md here, README.md in the public copy), as the package's README. */
-function packageReadme(repo: string): string {
-  const source = ['oss/README.md', 'README.md'].map((f) => path.join(ROOT, f)).find((f) => fs.existsSync(f) && /^## Run Radial without a window$/m.test(fs.readFileSync(f, 'utf8')));
+/** The text under a README's `## <heading>`, up to the next `## `. */
+function readmeSection(text: string, heading: string): string {
+  const rest = text.slice(text.indexOf(`\n## ${heading}\n`) + 1).split('\n');
+  const end = rest.findIndex((l, i) => i > 0 && /^## /.test(l));
+  return rest.slice(1, end === -1 ? undefined : end).join('\n').trim();
+}
+
+/** The package's README, from the public README (oss/README.md here, README.md in the public copy): its "Run Radial without a window" section, and the part of "Usage data" about the package, from the first paragraph that names `radial-cli`. */
+export function packageReadme(repo: string, root = ROOT): string {
+  const source = ['oss/README.md', 'README.md'].map((f) => path.join(root, f)).find((f) => fs.existsSync(f) && /^## Run Radial without a window$/m.test(fs.readFileSync(f, 'utf8')));
   if (!source) throw new Error('No "## Run Radial without a window" section in oss/README.md (or README.md): the package\'s README comes from it.');
   const text = fs.readFileSync(source, 'utf8').replaceAll('{{REPO}}', repo).replaceAll('{{REPO_NAME}}', repo.split('/')[1]);
-  const start = text.indexOf('## Run Radial without a window');
-  const rest = text.slice(start).split('\n');
-  const end = rest.findIndex((l, i) => i > 0 && /^## /.test(l));
-  const body = rest.slice(1, end === -1 ? undefined : end).join('\n').trim().replace(/^### /gm, '## ');
-  return `# radial-cli\n\n${body}\n\n## Source\n\nRadial is open source under the Apache License 2.0: https://github.com/${repo}\n`;
+  const body = readmeSection(text, 'Run Radial without a window').replace(/^### /gm, '## ');
+  const usage = /^## Usage data$/m.test(text) ? readmeSection(text, 'Usage data').split(/\n\n+/) : [];
+  const from = usage.findIndex((p) => p.includes('`radial-cli`'));
+  if (from === -1 || !usage.slice(from).some((p) => p.includes('radial telemetry off'))) throw new Error('The README\'s "## Usage data" section needs a paragraph about the `radial-cli` package and how to turn its events off (`radial telemetry off`): the package\'s README carries it.');
+  return `# radial-cli\n\n${body}\n\n## Usage data\n\n${usage.slice(from).join('\n\n')}\n\n## Source\n\nRadial is open source under the Apache License 2.0: https://github.com/${repo}\n`;
 }
 
 /** The oldest Node the package runs on: Radial's own floor (doctor's MIN_NODE, bin/radial, the repo's engines). */

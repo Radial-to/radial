@@ -52,18 +52,14 @@ If you have Radial for Mac, you don't need this: the app's own `radial` command 
 
 You need Node 22.18 or newer and git. Your sites need Node for their dev servers anyway.
 
-The `radial-cli` package isn't on npm yet. Until it is, build it from a checkout of this repository and install that:
-
 ```sh
-npm ci
-npm run pack:cli
-npm install -g dist/cli/radial-cli-1.0.0.tgz
+npm install -g radial-cli
 radial setup
 ```
 
 `radial setup` starts `radial serve` in the background, adds Radial's MCP server to Claude Code and Codex when they're installed, and ends with `radial doctor`, which lists what else this machine needs and what to run for each. Running it again changes nothing that's already set up.
 
-Agent sessions run in terminals that need node-pty, a native module. The package carries ready-made builds of it for macOS (the npm package will add Linux on x64 and arm64). Anywhere else, Alpine included, it's built on install, which needs python3, make and g++ (`sudo apt-get install -y python3 make g++` on Debian and Ubuntu). npm 12 runs a package's install steps only when you allow them, so there install it with `npm install -g dist/cli/radial-cli-1.0.0.tgz --allow-scripts=radial-cli`. `radial doctor` says whether node-pty works, and what to run when it doesn't.
+Agent sessions run in terminals that need node-pty, a native module. The package carries ready-made builds of it for macOS, and for Linux on x64 and arm64. Anywhere else, Alpine included, it's built on install, which needs python3, make and g++ (`sudo apt-get install -y python3 make g++` on Debian and Ubuntu). npm 12 runs a package's install steps only when you allow them, so there install it with `npm install -g radial-cli --allow-scripts=radial-cli`. With the ready-made builds that step has nothing to do, so npm 12's note that it blocked it is fine to ignore. `radial doctor` says whether node-pty works, and what to run when it doesn't.
 
 To install without root, give npm a folder of your own for global packages first: `npm config set prefix ~/.npm-global`, then add `~/.npm-global/bin` to your PATH.
 

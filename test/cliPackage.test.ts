@@ -77,6 +77,12 @@ test('npm pack: a radial-cli tarball under budget, its own package.json, node-pt
   assert.ok(!/MacOS|\.app\b/.test(bin), 'the package’s radial never looks for a Mac app');
   const readme = execFileSync('tar', ['-xzOf', tarball, 'package/README.md'], { encoding: 'utf8' });
   assert.match(readme, /^# radial-cli\n\nRadial also runs without its window/); assert.ok(!/—| \/ /.test(readme), 'no em dashes or slash separators');
+  assert.match(readme, /^npm install -g radial-cli$/m, 'it installs from npm');
+  assert.ok(!/isn't on npm yet|dist\/cli\//.test(readme), 'no build-from-a-checkout install');
+  const usage = readme.slice(readme.indexOf('\n## Usage data\n'));
+  assert.ok(usage.length > 1 && readme.indexOf('\n## Usage data\n') < readme.indexOf('\n## Source\n'), 'a usage data section, before the source link');
+  assert.match(usage, /`radial-cli` package from npm sends anonymous usage events/); assert.match(usage, /radial telemetry off/); assert.match(usage, /DO_NOT_TRACK=1/);
+  assert.ok(!/turn them off in Settings/.test(usage), 'not the Mac app’s paragraph');
   assert.ok(logs.some((l) => /Not official: no analytics key, sends nothing\./.test(l)));
   // --official: the key goes in, from the environment.
   const was = process.env.RADIAL_POSTHOG_KEY;
